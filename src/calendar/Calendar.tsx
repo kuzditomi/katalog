@@ -1,6 +1,7 @@
-import { FC, useMemo } from "react";
+import { FC, useEffect, useMemo } from "react";
 import { useRecoilState } from "recoil";
 import { importerState } from "../importer/importer.state";
+import { calendarState } from "./calendar.state";
 
 const extractDays = (lines: string[]) => {
     if (!lines?.length) {
@@ -15,13 +16,33 @@ const extractDays = (lines: string[]) => {
 
 export const Calendar: FC = () => {
     const [currentImportState] = useRecoilState(importerState);
+    const [currentCalendarState, setCalendarState] = useRecoilState(calendarState);
+
     const days = useMemo(() => extractDays(currentImportState.lines.slice(2)), [currentImportState]);
+
+    useEffect(() => {
+        if (currentCalendarState.selectedDay && !days.includes(currentCalendarState.selectedDay)) {
+            setCalendarState({
+                selectedDay: "",
+            });
+        }
+    }, [currentCalendarState.selectedDay, days, setCalendarState]);
 
     return (
         <div className="days">
             {days.map((d) => (
                 <div key={d}>
-                    <button>{d}</button>
+                    <button
+                        className={d === currentCalendarState.selectedDay ? "active" : ""}
+                        onClick={() =>
+                            setCalendarState({
+                                ...currentCalendarState,
+                                selectedDay: d,
+                            })
+                        }
+                    >
+                        {d}
+                    </button>
                 </div>
             ))}
         </div>

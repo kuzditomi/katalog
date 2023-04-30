@@ -45,3 +45,7 @@
     display: flex;
     flex-direction: row;
 }
+
+.days .active {
+  background-color: turquoise;
+}
