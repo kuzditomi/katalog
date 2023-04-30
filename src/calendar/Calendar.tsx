@@ -37,13 +37,14 @@ export const Calendar: FC = () => {
         }
     }, [currentCalendarState.selectedDay, days, setCalendarState]);
 
-    if(!currentImportState?.lines?.length){
+    if (!currentImportState?.lines?.length) {
         return null;
     }
 
     return (
         <div className="calendar">
             <ReactCalendar
+                tileDisabled={(day) => !days.includes(format(day.date, "dd-MM-yyyy"))}
                 onChange={(value) => {
                     if (value) {
                         setCalendarState({
