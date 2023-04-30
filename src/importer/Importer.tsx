@@ -15,7 +15,7 @@ export const Importer: FC = () => {
                 lines: csvData,
             });
         },
-        [currentImportState, setImportstate]
+        [setImportstate]
     );
 
     return (
