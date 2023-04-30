@@ -1,7 +1,7 @@
 import { FC, useMemo } from "react";
 import { useRecoilState } from "recoil";
 import { calendarState } from "../calendar/calendar.state";
-import { LineChart, Line, XAxis, YAxis, Tooltip } from "recharts";
+import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceArea } from "recharts";
 import { importerState } from "../importer/importer.state";
 import { parse } from "date-fns";
 
@@ -56,6 +56,8 @@ export const DailyChart: FC = () => {
             <Line type="monotone" dataKey="glucose" stroke="#8884d8" />
             <XAxis dataKey="datetime" />
             <YAxis min={2} max={12} />
+            <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
+            <ReferenceArea y1={4} y2={8} fill="#B8E0D2" fillOpacity={0.3} />
             <Tooltip />
         </LineChart>
     );
