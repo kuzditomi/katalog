@@ -1,21 +1,18 @@
 import { ChangeEvent, FC, useCallback } from "react";
-import { atom, useRecoilState } from "recoil";
-
-const importState = atom({
-    key: "importState",
-    default: {
-        fileName: "",
-    },
-});
+import { useRecoilState } from "recoil";
+import { parseCsvFile } from "./csvreader";
+import { importerState } from "./importer.state";
 
 export const Importer: FC = () => {
-    const [currentImportState, setImportstate] = useRecoilState(importState);
+    const [currentImportState, setImportstate] = useRecoilState(importerState);
 
     const changeHandler = useCallback(
-        (event: ChangeEvent<HTMLInputElement>) => {
+        async (event: ChangeEvent<HTMLInputElement>) => {
+            const csvData = await parseCsvFile(event.target.files![0]);
+
             setImportstate({
-                ...currentImportState,
                 fileName: event.target.files?.[0].name || "",
+                lines: csvData,
             });
         },
         [currentImportState, setImportstate]
