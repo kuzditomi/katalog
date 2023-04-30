@@ -6,11 +6,18 @@ import { importerState } from "../importer/importer.state";
 import { parse } from "date-fns";
 
 type GlucoseData = {
-    datetime: Date;
+    minutesInDay: number;
     glucose: number;
 };
 
 const refdate = new Date();
+
+const minutesInDayFormatter = (minutesInDay: number) => {
+    const hours = ("" + Math.floor(minutesInDay / 60)).padStart(2, "0");
+    const minues = ("" + (minutesInDay % 60)).padStart(2, "0");
+
+    return `${hours}:${minues}`;
+};
 
 const extractGlucoseData = (lines: string[], selectedDay: string): GlucoseData[] => {
     if (!lines?.length || !selectedDay) {
@@ -25,11 +32,17 @@ const extractGlucoseData = (lines: string[], selectedDay: string): GlucoseData[]
         .filter(({ datetime, glucoseValue }) => glucoseValue && datetime.split(" ")[0] === selectedDay);
 
     const data: GlucoseData[] = relevantLines
-        .map(({ datetime, glucoseValue }) => ({
-            datetime: parse(datetime, "dd-MM-yyyy HH:mm", refdate),
-            glucose: Number(glucoseValue),
-        }))
-        .sort((a, b) => (a.datetime < b.datetime ? -1 : 1));
+        .map(({ datetime, glucoseValue }) => {
+            const date = parse(datetime, "dd-MM-yyyy HH:mm", refdate);
+
+            const minutesInDay = date.getHours() * 60 + date.getMinutes();
+
+            return {
+                minutesInDay,
+                glucose: Number(glucoseValue),
+            };
+        })
+        .sort((a, b) => a.minutesInDay - b.minutesInDay);
 
     return data;
 };
@@ -54,11 +67,24 @@ export const DailyChart: FC = () => {
     return (
         <LineChart width={800} height={400} data={glucoseData}>
             <Line type="monotone" dataKey="glucose" stroke="#8884d8" />
-            <XAxis dataKey="datetime" />
-            <YAxis min={2} max={12} />
+            <XAxis
+                dataKey="minutesInDay"
+                type="number"
+                tickFormatter={(minutesInDay) => minutesInDayFormatter(minutesInDay)}
+                domain={[0, 24 * 60]}
+            />
+            <YAxis type="number" domain={[2, 12]} />
             <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
             <ReferenceArea y1={4} y2={8} fill="#B8E0D2" fillOpacity={0.3} />
-            <Tooltip />
+            <Tooltip
+                labelFormatter={(_, points) => {
+                    if (!points?.length) {
+                        return "";
+                    }
+                    const { minutesInDay } = points[0].payload as GlucoseData;
+                    return minutesInDayFormatter(minutesInDay);
+                }}
+            />
         </LineChart>
     );
 };
