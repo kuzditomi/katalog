@@ -2,8 +2,14 @@ import { FC, useEffect, useMemo } from "react";
 import { useRecoilState } from "recoil";
 import { importerState } from "../importer/importer.state";
 import { calendarState } from "./calendar.state";
+import ReactCalendar from "react-calendar";
+import { format } from "date-fns";
 
-const extractDays = (lines: string[]) => {
+/**
+ *
+ * @returns format dd-MM-yyyy
+ */
+const extractDays = (lines: string[]): string[] => {
     if (!lines?.length) {
         return [];
     }
@@ -21,30 +27,32 @@ export const Calendar: FC = () => {
     const days = useMemo(() => extractDays(currentImportState.lines.slice(2)), [currentImportState]);
 
     useEffect(() => {
-        if (currentCalendarState.selectedDay && !days.includes(currentCalendarState.selectedDay)) {
+        if (
+            currentCalendarState.selectedDay &&
+            !days.includes(format(currentCalendarState.selectedDay, "dd-MM-yyyy"))
+        ) {
             setCalendarState({
-                selectedDay: "",
+                selectedDay: null,
             });
         }
     }, [currentCalendarState.selectedDay, days, setCalendarState]);
 
+    if(!currentImportState?.lines?.length){
+        return null;
+    }
+
     return (
-        <div className="days">
-            {days.map((d) => (
-                <div key={d}>
-                    <button
-                        className={d === currentCalendarState.selectedDay ? "active" : ""}
-                        onClick={() =>
-                            setCalendarState({
-                                ...currentCalendarState,
-                                selectedDay: d,
-                            })
-                        }
-                    >
-                        {d}
-                    </button>
-                </div>
-            ))}
+        <div className="calendar">
+            <ReactCalendar
+                onChange={(value) => {
+                    if (value) {
+                        setCalendarState({
+                            ...currentCalendarState,
+                            selectedDay: value as Date,
+                        });
+                    }
+                }}
+            />
         </div>
     );
 };

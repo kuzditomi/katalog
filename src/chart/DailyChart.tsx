@@ -3,7 +3,7 @@ import { useRecoilState } from "recoil";
 import { calendarState } from "../calendar/calendar.state";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceArea } from "recharts";
 import { importerState } from "../importer/importer.state";
-import { parse } from "date-fns";
+import { format, parse } from "date-fns";
 
 type GlucoseData = {
     minutesInDay: number;
@@ -19,7 +19,12 @@ const minutesInDayFormatter = (minutesInDay: number) => {
     return `${hours}:${minues}`;
 };
 
-const extractGlucoseData = (lines: string[], selectedDay: string): GlucoseData[] => {
+const extractGlucoseData = (lines: string[], selectedDay: Date | null): GlucoseData[] => {
+    if (!selectedDay) {
+        return [];
+    }
+
+    const selectedDayString = format(selectedDay, "dd-MM-yyyy");
     if (!lines?.length || !selectedDay) {
         return [];
     }
@@ -29,7 +34,7 @@ const extractGlucoseData = (lines: string[], selectedDay: string): GlucoseData[]
             const row = l.split(",");
             return { datetime: row[2], glucoseValue: row[3] === "0" ? row[4] : row[5] };
         })
-        .filter(({ datetime, glucoseValue }) => glucoseValue && datetime.split(" ")[0] === selectedDay);
+        .filter(({ datetime, glucoseValue }) => glucoseValue && datetime.split(" ")[0] === selectedDayString);
 
     const data: GlucoseData[] = relevantLines
         .map(({ datetime, glucoseValue }) => {
@@ -56,6 +61,10 @@ export const DailyChart: FC = () => {
         [currentCalendarState.selectedDay, currentImportState.lines]
     );
 
+    if(!currentImportState?.lines?.length){
+        return null;
+    }
+
     if (!currentCalendarState.selectedDay) {
         return <div>Valassz ki egy napot!</div>;
     }
@@ -72,6 +81,7 @@ export const DailyChart: FC = () => {
                 type="number"
                 tickFormatter={(minutesInDay) => minutesInDayFormatter(minutesInDay)}
                 domain={[0, 24 * 60]}
+                tickCount={24}
             />
             <YAxis type="number" domain={[2, 12]} />
             <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />

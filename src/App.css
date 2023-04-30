@@ -41,11 +41,11 @@
     color: #888;
 }
 
-.days {
+.container {
     display: flex;
     flex-direction: row;
 }
 
-.days .active {
-  background-color: turquoise;
+.calendar {
+    margin-right: 20px;
 }

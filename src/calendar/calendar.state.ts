@@ -1,12 +1,12 @@
 import { atom } from "recoil";
 
 type CalendarState = {
-    selectedDay: string
+    selectedDay: Date | null
 }
 
 export const calendarState = atom<CalendarState>({
     key: "calendarState",
     default: {
-        selectedDay: "",
+        selectedDay: null,
     },
 });
