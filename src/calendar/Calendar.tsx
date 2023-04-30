@@ -1,41 +1,16 @@
-import { FC, useEffect, useMemo } from "react";
+import { FC, useMemo } from "react";
 import { useRecoilState } from "recoil";
 import { importerState } from "../importer/importer.state";
 import { calendarState } from "./calendar.state";
 import ReactCalendar from "react-calendar";
 import { format } from "date-fns";
-
-/**
- *
- * @returns format dd-MM-yyyy
- */
-const extractDays = (lines: string[]): string[] => {
-    if (!lines?.length) {
-        return [];
-    }
-
-    const dates = lines.map((l) => l.split(",")[2].split(" ")[0]);
-    const days = new Set(dates);
-
-    return Array.from(days.keys());
-};
+import { getDays } from "./getDays";
 
 export const Calendar: FC = () => {
     const [currentImportState] = useRecoilState(importerState);
-    const [currentCalendarState, setCalendarState] = useRecoilState(calendarState);
+    const [_, setCalendarState] = useRecoilState(calendarState);
 
-    const days = useMemo(() => extractDays(currentImportState.lines.slice(2)), [currentImportState]);
-
-    useEffect(() => {
-        if (
-            currentCalendarState.selectedDay &&
-            !days.includes(format(currentCalendarState.selectedDay, "dd-MM-yyyy"))
-        ) {
-            setCalendarState({
-                selectedDay: null,
-            });
-        }
-    }, [currentCalendarState.selectedDay, days, setCalendarState]);
+    const days = useMemo(() => getDays(currentImportState.lines.slice(2)), [currentImportState]);
 
     if (!currentImportState?.lines?.length) {
         return null;
@@ -44,14 +19,20 @@ export const Calendar: FC = () => {
     return (
         <div className="calendar">
             <ReactCalendar
+                returnValue="range"
+                selectRange={true}
                 tileDisabled={(day) => !days.includes(format(day.date, "dd-MM-yyyy"))}
                 onChange={(value) => {
-                    if (value) {
-                        setCalendarState({
-                            ...currentCalendarState,
-                            selectedDay: value as Date,
-                        });
+                    const range = value as [Date, Date];
+
+                    if (!range?.length) {
+                        return;
                     }
+
+                    setCalendarState({
+                        from: range[0],
+                        to: range[1],
+                    });
                 }}
             />
         </div>

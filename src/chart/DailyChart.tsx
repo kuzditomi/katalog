@@ -1,6 +1,5 @@
 import { FC, useMemo } from "react";
 import { useRecoilState } from "recoil";
-import { calendarState } from "../calendar/calendar.state";
 import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceArea } from "recharts";
 import { importerState } from "../importer/importer.state";
 import { format, parse } from "date-fns";
@@ -52,20 +51,19 @@ const extractGlucoseData = (lines: string[], selectedDay: Date | null): GlucoseD
     return data;
 };
 
-export const DailyChart: FC = () => {
-    const [currentCalendarState] = useRecoilState(calendarState);
+export const DailyChart: FC<{ selectedDay: Date }> = ({ selectedDay }) => {
     const [currentImportState] = useRecoilState(importerState);
 
     const glucoseData = useMemo(
-        () => extractGlucoseData(currentImportState.lines, currentCalendarState.selectedDay),
-        [currentCalendarState.selectedDay, currentImportState.lines]
+        () => extractGlucoseData(currentImportState.lines, selectedDay),
+        [selectedDay, currentImportState.lines]
     );
 
-    if(!currentImportState?.lines?.length){
+    if (!currentImportState?.lines?.length) {
         return null;
     }
 
-    if (!currentCalendarState.selectedDay) {
+    if (!selectedDay) {
         return <div>Valassz ki egy napot!</div>;
     }
 
@@ -74,27 +72,30 @@ export const DailyChart: FC = () => {
     }
 
     return (
-        <LineChart width={800} height={400} data={glucoseData}>
-            <Line type="monotone" dataKey="glucose" stroke="#8884d8" />
-            <XAxis
-                dataKey="minutesInDay"
-                type="number"
-                tickFormatter={(minutesInDay) => minutesInDayFormatter(minutesInDay)}
-                domain={[0, 24 * 60]}
-                tickCount={24}
-            />
-            <YAxis type="number" domain={[2, 12]} />
-            <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
-            <ReferenceArea y1={4} y2={8} fill="#B8E0D2" fillOpacity={0.3} />
-            <Tooltip
-                labelFormatter={(_, points) => {
-                    if (!points?.length) {
-                        return "";
-                    }
-                    const { minutesInDay } = points[0].payload as GlucoseData;
-                    return minutesInDayFormatter(minutesInDay);
-                }}
-            />
-        </LineChart>
+        <div>
+            <h3>{format(selectedDay, "MM-dd")}</h3>
+            <LineChart width={800} height={400} data={glucoseData}>
+                <Line type="monotone" dataKey="glucose" stroke="#8884d8" />
+                <XAxis
+                    dataKey="minutesInDay"
+                    type="number"
+                    tickFormatter={(minutesInDay) => minutesInDayFormatter(minutesInDay)}
+                    domain={[0, 24 * 60]}
+                    tickCount={60}
+                />
+                <YAxis type="number" domain={[2, 12]} tickCount={10} />
+                <CartesianGrid stroke="#ccc" strokeDasharray="5 5" />
+                <ReferenceArea y1={4} y2={8} fill="#B8E0D2" fillOpacity={0.3} />
+                <Tooltip
+                    labelFormatter={(_, points) => {
+                        if (!points?.length) {
+                            return "";
+                        }
+                        const { minutesInDay } = points[0].payload as GlucoseData;
+                        return minutesInDayFormatter(minutesInDay);
+                    }}
+                />
+            </LineChart>
+        </div>
     );
 };

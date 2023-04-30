@@ -2,7 +2,7 @@ import "./App.css";
 import { RecoilRoot } from "recoil";
 import { Importer } from "./importer/Importer";
 import { Calendar } from "./calendar/Calendar";
-import { DailyChart } from "./chart/DailyChart";
+import { AllCharts } from "./chart/AllCharts";
 
 function App() {
     return (
@@ -11,7 +11,7 @@ function App() {
             <Importer />
             <div className="container">
                 <Calendar />
-                <DailyChart />
+                <AllCharts />
             </div>
         </RecoilRoot>
     );
