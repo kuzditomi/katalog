@@ -1,12 +1,22 @@
 import { FC, useMemo } from "react";
 import { useRecoilState } from "recoil";
-import { LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceArea } from "recharts";
+import {
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    Tooltip,
+    CartesianGrid,
+    ReferenceArea,
+    ReferenceLine,
+} from "recharts";
 import { importerState } from "../importer/importer.state";
 import { format, parse } from "date-fns";
 
 type GlucoseData = {
     minutesInDay: number;
     glucose: number;
+    note: string;
 };
 
 const refdate = new Date();
@@ -18,37 +28,48 @@ const minutesInDayFormatter = (minutesInDay: number) => {
     return `${hours}:${minues}`;
 };
 
-const extractGlucoseData = (lines: string[], selectedDay: Date | null): GlucoseData[] => {
+const extractGlucoseData = (
+    lines: string[],
+    selectedDay: Date | null
+): {
+    measures: GlucoseData[];
+    meals: GlucoseData[];
+} | null => {
     if (!selectedDay) {
-        return [];
+        return null;
     }
 
     const selectedDayString = format(selectedDay, "dd-MM-yyyy");
     if (!lines?.length || !selectedDay) {
-        return [];
+        return null;
     }
 
     const relevantLines = lines
         .map((l) => {
             const row = l.split(",");
-            return { datetime: row[2], glucoseValue: row[3] === "0" ? row[4] : row[5] };
+            return { datetime: row[2], type: row[3], glucoseValue: row[3] === "0" ? row[4] : row[5], note: row[9] };
         })
-        .filter(({ datetime, glucoseValue }) => glucoseValue && datetime.split(" ")[0] === selectedDayString);
+        .filter(({ datetime }) => datetime.split(" ")[0] === selectedDayString);
 
-    const data: GlucoseData[] = relevantLines
-        .map(({ datetime, glucoseValue }) => {
+    const data = relevantLines
+        .map(({ datetime, glucoseValue, type, note }) => {
             const date = parse(datetime, "dd-MM-yyyy HH:mm", refdate);
 
             const minutesInDay = date.getHours() * 60 + date.getMinutes();
 
             return {
+                type,
+                note,
                 minutesInDay,
                 glucose: Number(glucoseValue),
             };
         })
         .sort((a, b) => a.minutesInDay - b.minutesInDay);
 
-    return data;
+    const measures = data.filter((d) => d.type === "0" || d.type === "1");
+    const meals = data.filter((d) => d.type === "5");
+
+    return { measures, meals };
 };
 
 export const DailyChart: FC<{ selectedDay: Date }> = ({ selectedDay }) => {
@@ -71,10 +92,24 @@ export const DailyChart: FC<{ selectedDay: Date }> = ({ selectedDay }) => {
         return <div>Tolts fel rendes adatokat!</div>;
     }
 
+    if (!glucoseData) {
+        return <div>Valamit elrontottam :(</div>;
+    }
+
     return (
         <div>
             <h3>{format(selectedDay, "MM-dd")}</h3>
-            <LineChart width={800} height={400} data={glucoseData}>
+            <LineChart
+                width={800}
+                height={400}
+                data={glucoseData.measures}
+                margin={{
+                    top: 80,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                }}
+            >
                 <Line type="monotone" dataKey="glucose" stroke="#8884d8" />
                 <XAxis
                     dataKey="minutesInDay"
@@ -95,6 +130,17 @@ export const DailyChart: FC<{ selectedDay: Date }> = ({ selectedDay }) => {
                         return minutesInDayFormatter(minutesInDay);
                     }}
                 />
+
+                {glucoseData.meals.map((m, i) => (
+                    <ReferenceLine
+                        key={i}
+                        isFront
+                        x={m.minutesInDay}
+                        stroke="orange"
+                        strokeDasharray="3 3"
+                        label={`(${m.note})🍎`}
+                    />
+                ))}
             </LineChart>
         </div>
     );
